@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub 仓库管理器</title>
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: #f6f8fa;
+    color: #24292f;
+    min-height: 100vh;
+}
+a { color: #0969da; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Header ── */
+.header {
+    background: #24292f;
+    color: #fff;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+.header h1 { font-size: 18px; font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.header .avatar { width: 28px; height: 28px; border-radius: 50%; }
+.btn {
+    padding: 6px 14px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    background: #fff;
+    color: #24292f;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.btn:hover { background: #f3f4f6; }
+.btn-primary {
+    background: #1f883d;
+    color: #fff;
+    border-color: #1f883d;
+}
+.btn-primary:hover { background: #1a7c37; }
+.btn-danger {
+    background: #cf222e;
+    color: #fff;
+    border-color: #cf222e;
+}
+.btn-danger:hover { background: #a40e26; }
+.btn-sm { padding: 3px 10px; font-size: 12px; }
+
+/* ── Container ── */
+.container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+/* ── Auth page ── */
+.auth-card {
+    max-width: 400px;
+    margin: 80px auto;
+    background: #fff;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.auth-card h2 { font-size: 22px; margin-bottom: 8px; }
+.auth-card .subtitle { color: #656d76; font-size: 14px; margin-bottom: 24px; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+}
+.form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: #0969da;
+    box-shadow: 0 0 0 3px rgba(9,105,218,0.15);
+}
+.form-hint { font-size: 12px; color: #656d76; margin-top: 4px; }
+.error-msg { background: #ffebe9; border: 1px solid #ffc1ba; color: #cf222e; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; display: none; }
+
+/* ── Repo list ── */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.toolbar h3 { font-size: 18px; }
+
+.repo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.repo-card {
+    background: #fff;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 18px;
+    transition: box-shadow 0.15s;
+}
+.repo-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.08); }
+.repo-card .repo-name { font-size: 16px; font-weight: 600; color: #0969da; margin-bottom: 6px; }
+.repo-card .repo-desc { font-size: 13px; color: #656d76; margin-bottom: 10px; min-height: 20px; }
+.repo-meta { display: flex; gap: 14px; font-size: 12px; color: #656d76; margin-bottom: 12px; flex-wrap: wrap; }
+.repo-meta span { display: flex; align-items: center; gap: 3px; }
+.repo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.repo-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 12px;
+    font-size: 11px;
+    border: 1px solid #d0d7de;
+}
+
+/* ── Upload page ── */
+.back-link { font-size: 14px; margin-bottom: 16px; display: inline-block; }
+
+.repo-header {
+    background: #fff;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.repo-header h3 { font-size: 18px; }
+
+.upload-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 768px) { .upload-layout { grid-template-columns: 1fr; } }
+
+.upload-panel {
+    background: #fff;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.drop-zone {
+    border: 2px dashed #d0d7de;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    margin-bottom: 16px;
+}
+.drop-zone:hover, .drop-zone.drag-over { border-color: #0969da; background: #f6f8fb; }
+.drop-zone .icon { font-size: 36px; margin-bottom: 8px; }
+.drop-zone p { color: #656d76; font-size: 14px; }
+
+.file-tree {
+    max-height: 350px;
+    overflow-y: auto;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+.file-tree .tree-item {
+    padding: 3px 8px;
+    border-radius: 3px;
+    display: flex;
+    justify-content: space-between;
+}
+.file-tree .tree-item:hover { background: #f3f4f6; }
+.file-tree .file-size { color: #656d76; font-size: 11px; flex-shrink: 0; margin-left: 12px; }
+
+.upload-options { margin-bottom: 16px; }
+.upload-options label { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border: 1px solid #d0d7de; border-radius: 6px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; font-size: 14px; }
+.upload-options label:hover { border-color: #0969da; }
+.upload-options input[type="radio"] { margin-top: 2px; accent-color: #0969da; }
+.mode-title { font-weight: 500; }
+.mode-desc { font-size: 12px; color: #656d76; display: block; }
+
+.progress-bar-wrap {
+    height: 12px;
+    background: #d0d7de;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    display: none;
+}
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1f883d, #2da44e);
+    border-radius: 6px;
+    transition: width 0.4s ease;
+    width: 0%;
+}
+.progress-text {
+    font-size: 14px;
+    color: #24292f;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #f6f8fa;
+    border-radius: 6px;
+    display: none;
+    word-break: break-all;
+}
+
+.result-box {
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    display: none;
+}
+.result-box.success { background: #dafbe1; border: 1px solid #7ee27c; color: #116329; display: block; }
+.result-box.error { background: #ffebe9; border: 1px solid #ffc1ba; color: #cf222e; display: block; }
+.result-box ul { margin: 6px 0 0 18px; }
+
+/* ── Modal ── */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+    background: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 440px;
+    width: 90%;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.modal h3 { margin-bottom: 16px; font-size: 18px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+/* ── Empty state ── */
+.empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: #656d76;
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+/* ── Spinner ── */
+.spinner {
+    display: inline-block;
+    width: 20px; height: 20px;
+    border: 2px solid #d0d7de;
+    border-top-color: #0969da;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.6);
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 14px;
+}
+.loading-overlay.active { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner" style="width:32px;height:32px;"></div>
+    <span id="loadingText">加载中...</span>
+</div>
+
+<!-- Header -->
+<header class="header" id="header" style="display:none;">
+    <h1>GitHub 仓库管理器</h1>
+    <div class="header-right">
+        <img class="avatar" id="headerAvatar" src="" alt="">
+        <span id="headerUsername"></span>
+        <button class="btn btn-sm" onclick="logout()">登出</button>
+    </div>
+</header>
+
+<div class="container">
+
+<!-- Auth page -->
+<section id="authPage">
+    <div class="auth-card">
+        <h2>登录 GitHub</h2>
+        <p class="subtitle">请输入你的 GitHub Personal Access Token</p>
+        <div class="error-msg" id="authError"></div>
+        <div class="form-group">
+            <label for="tokenInput">Personal Access Token</label>
+            <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+            <div class="form-hint">
+                需要 <b>repo</b> 和 <b>delete_repo</b> 权限。在
+                <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings → Tokens</a> 创建
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="login()" style="width:100%;padding:10px;font-size:15px;" id="loginBtn">
+            验证并登录
+        </button>
+    </div>
+</section>
+
+<!-- Repo list page -->
+<section id="reposPage" style="display:none;">
+    <div class="toolbar">
+        <h3>我的仓库</h3>
+        <button class="btn btn-primary" onclick="showCreateModal()">+ 新建仓库</button>
+    </div>
+    <div class="repo-grid" id="repoGrid"></div>
+    <div id="repoPagination" style="text-align:center;margin-top:20px;"></div>
+    <div class="empty-state" id="repoEmpty" style="display:none;">
+        <div class="icon">📭</div>
+        <p>还没有仓库，点击右上角创建一个吧</p>
+    </div>
+</section>
+
+<!-- Upload page -->
+<section id="uploadPage" style="display:none;">
+    <a href="#" class="back-link" onclick="showReposPage()">← 返回仓库列表</a>
+    <div class="repo-header">
+        <h3 id="uploadRepoName"></h3>
+        <a id="uploadRepoUrl" href="#" target="_blank" style="font-size:13px;">在 GitHub 中查看</a>
+    </div>
+
+    <div class="upload-layout">
+        <div class="upload-panel">
+            <h4 style="margin-bottom:12px;">选择本地文件夹</h4>
+            <div class="drop-zone" id="dropZone" onclick="document.getElementById('folderInput').click()">
+                <div class="icon">📁</div>
+                <p>点击选择文件夹，或将文件夹拖拽到此处</p>
+                <p style="font-size:12px;color:#8b949e;">自动跳过 node_modules、.git、dist 等目录</p>
+            </div>
+            <input type="file" id="folderInput" webkitdirectory multiple style="display:none;" onchange="handleFolderSelect(event)">
+            <input type="file" id="folderInputMoz" multiple style="display:none;" onchange="handleFolderSelect(event)">
+        </div>
+
+        <div class="upload-panel" id="repoInfoPanel">
+            <h4 style="margin-bottom:12px;">仓库信息</h4>
+            <div class="form-group">
+                <label>仓库</label>
+                <div id="repoInfoName" style="padding:8px 0;font-size:15px;font-weight:600;"></div>
+            </div>
+            <div id="emptyRepoMsg" style="display:none;">
+                <div style="background:#fff8c5;border:1px solid #d4a72c;padding:10px;border-radius:6px;font-size:13px;margin-bottom:16px;">
+                    该仓库为空，将创建首次提交
+                </div>
+            </div>
+            <div style="color:#656d76;font-size:13px;">
+                选择文件夹后将弹出上传配置窗口
+            </div>
+        </div>
+    </div>
+</section>
+</div><!-- /container -->
+
+<!-- Upload Progress Modal -->
+<div class="modal-overlay" id="uploadModal">
+    <div class="modal" style="max-width:620px;max-height:85vh;display:flex;flex-direction:column;">
+        <h3 id="uploadModalTitle" style="flex-shrink:0;">正在准备上传...</h3>
+        <div style="flex:1;overflow-y:auto;min-height:0;">
+
+            <!-- Phase: Reading files -->
+            <div id="uploadPhaseRead">
+                <div class="progress-bar-wrap" style="display:block;">
+                    <div class="progress-bar-fill" id="uploadProgFill"></div>
+                </div>
+                <div class="progress-text" id="uploadProgText" style="display:block;"></div>
+                <div class="file-tree" id="uploadFileTree" style="max-height:200px;"></div>
+                <div style="font-size:13px;color:#656d76;" id="uploadFileCount"></div>
+            </div>
+
+            <!-- Phase: Settings -->
+            <div id="uploadPhaseSettings" style="display:none;">
+                <div style="border-top:2px solid #d0d7de;margin:16px 0;"></div>
+                <h4 style="margin-bottom:10px;">上传配置</h4>
+                <div class="upload-options">
+                    <h4 style="margin-bottom:10px;">上传模式</h4>
+                    <label>
+                        <input type="radio" name="uploadMode" value="partial" checked>
+                        <div>
+                            <span class="mode-title">部分更新（推荐）</span>
+                            <span class="mode-desc">同名文件覆盖，新文件添加，仓库其他文件不受影响</span>
+                        </div>
+                    </label>
+                    <label>
+                        <input type="radio" name="uploadMode" value="full">
+                        <div>
+                            <span class="mode-title">全量替换</span>
+                            <span class="mode-desc">清空仓库所有文件，仅保留上传的文件</span>
+                        </div>
+                    </label>
+                    <label>
+                        <input type="radio" name="uploadMode" value="incremental">
+                        <div>
+                            <span class="mode-title">增量添加</span>
+                            <span class="mode-desc">仅添加仓库中不存在的文件，已存在的跳过</span>
+                        </div>
+                    </label>
+                </div>
+                <div id="uploadRootFolderNote" style="display:none;background:#f6f8fa;border:1px solid #d0d7de;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:13px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;">
+                        <input type="checkbox" id="uploadKeepRoot" style="width:16px;height:16px;margin:0;">
+                        <span>保留根文件夹 "<strong id="uploadRootName"></strong>" — 上传后仓库中会多一层目录</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label for="uploadBranchInput">目标分支</label>
+                    <input type="text" id="uploadBranchInput" list="uploadBranchList" placeholder="输入分支名或选择已有分支">
+                    <datalist id="uploadBranchList"></datalist>
+                    <div class="form-hint">可选择已有分支，或输入新分支名（将自动创建）</div>
+                </div>
+                <div class="form-group">
+                    <label for="uploadCommitMsg">Commit Message</label>
+                    <input type="text" id="uploadCommitMsg" placeholder="例如：Update frontend components">
+                </div>
+            </div>
+
+            <!-- Phase: Result -->
+            <div class="result-box" id="uploadResultBox"></div>
+        </div>
+
+        <div class="modal-actions" style="flex-shrink:0;border-top:1px solid #d0d7de;padding-top:12px;margin-top:8px;">
+            <button class="btn" id="uploadCancelBtn" onclick="cancelUpload()">取消上传</button>
+            <button class="btn btn-primary" id="uploadConfirmBtn" style="display:none;" onclick="confirmUpload()">确认上传到仓库</button>
+        </div>
+    </div>
+</div>
+
+<!-- Create Repo Modal -->
+<div class="modal-overlay" id="createModal">
+    <div class="modal">
+        <h3>新建仓库</h3>
+        <div id="createError" class="error-msg"></div>
+        <div class="form-group">
+            <label for="newRepoName">仓库名称</label>
+            <input type="text" id="newRepoName" placeholder="my-new-repo">
+        </div>
+        <div class="form-group">
+            <label for="newRepoDesc">描述（可选）</label>
+            <input type="text" id="newRepoDesc" placeholder="仓库描述...">
+        </div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="newRepoPrivate"> 私有仓库
+            </label>
+        </div>
+        <div class="modal-actions">
+            <button class="btn" onclick="closeCreateModal()">取消</button>
+            <button class="btn btn-primary" onclick="createRepo()">创建</button>
+        </div>
+    </div>
+</div>
+
+<!-- Rename Modal -->
+<div class="modal-overlay" id="renameModal">
+    <div class="modal">
+        <h3>重命名仓库</h3>
+        <div id="renameError" class="error-msg"></div>
+        <div class="form-group">
+            <label for="renameInput">新名称</label>
+            <input type="text" id="renameInput" placeholder="new-repo-name">
+        </div>
+        <div class="modal-actions">
+            <button class="btn" onclick="closeRenameModal()">取消</button>
+            <button class="btn btn-primary" onclick="confirmRename()">确认</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <h3>删除仓库</h3>
+        <p id="deleteWarning" style="margin-bottom:16px;color:#cf222e;"></p>
+        <div class="form-group">
+            <label>请输入仓库名以确认删除：<b id="deleteRepoName"></b></label>
+            <input type="text" id="deleteConfirmInput" placeholder="输入仓库全名确认">
+        </div>
+        <div id="deleteError" class="error-msg"></div>
+        <div class="modal-actions">
+            <button class="btn" onclick="closeDeleteModal()">取消</button>
+            <button class="btn btn-danger" id="deleteConfirmBtn" disabled onclick="confirmDelete()">我了解后果，删除此仓库</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── State ──
+let currentPage = 'auth';
+let selectedFiles = [];
+let currentUploadRepo = null;
+
+// ── Helpers ──
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+function showLoading(text = '加载中...') {
+    $('#loadingText').textContent = text;
+    $('#loadingOverlay').classList.add('active');
+}
+function hideLoading() { $('#loadingOverlay').classList.remove('active'); }
+
+const API_BASE = 'http://localhost:4000';
+const API_TIMEOUT = 10 * 60 * 1000; // 10 min
+
+async function api(method, url, body = null) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+    try {
+        const opts = { method, headers: {}, signal: controller.signal };
+        if (body) {
+            opts.headers['Content-Type'] = 'application/json';
+            opts.body = JSON.stringify(body);
+        }
+        const res = await fetch(API_BASE + url, opts);
+        const text = await res.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            throw new Error(`服务器返回异常 (HTTP ${res.status}): ${text.slice(0, 200)}`);
+        }
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        return data;
+    } catch (err) {
+        if (err.name === 'AbortError') {
+            throw new Error('请求超时（10分钟），请减少文件数量后重试');
+        }
+        throw err;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+// ── Navigation ──
+function showPage(page) {
+    currentPage = page;
+    $('#authPage').style.display = page === 'auth' ? '' : 'none';
+    $('#reposPage').style.display = page === 'repos' ? '' : 'none';
+    $('#uploadPage').style.display = page === 'upload' ? '' : 'none';
+    $('#header').style.display = page === 'auth' ? 'none' : '';
+}
+
+function showReposPage() {
+    showPage('repos');
+    loadRepos();
+}
+
+let readCancelFlag = false;
+let readFilesData = [];
+
+function showUploadPage(owner, repo, htmlUrl) {
+    currentUploadRepo = { owner, repo, htmlUrl };
+    showPage('upload');
+    $('#uploadRepoName').textContent = `${owner}/${repo}`;
+    $('#uploadRepoUrl').href = htmlUrl || `https://github.com/${owner}/${repo}`;
+    $('#repoInfoName').textContent = `${owner}/${repo}`;
+    $('#emptyRepoMsg').style.display = 'none';
+    selectedFiles = [];
+    readFilesData = [];
+    readCancelFlag = false;
+
+    loadBranches(owner, repo);
+    checkRepoEmpty(owner, repo);
+}
+
+// ── Auth ──
+async function checkAuth() {
+    try {
+        const data = await api('GET', '/api/auth');
+        if (data.authenticated) {
+            $('#headerUsername').textContent = data.username;
+            $('#headerAvatar').src = `https://github.com/${data.username}.png`;
+            showPage('repos');
+            loadRepos();
+        } else {
+            showPage('auth');
+        }
+    } catch (e) {
+        showPage('auth');
+    }
+}
+
+async function login() {
+    const token = $('#tokenInput').value.trim();
+    if (!token) {
+        showAuthError('请输入 Token');
+        return;
+    }
+
+    $('#loginBtn').disabled = true;
+    $('#loginBtn').textContent = '验证中...';
+    hideAuthError();
+
+    try {
+        const data = await api('POST', '/api/auth', { token });
+        $('#headerUsername').textContent = data.username;
+        $('#headerAvatar').src = data.avatar || `https://github.com/${data.username}.png`;
+        showPage('repos');
+        loadRepos();
+    } catch (err) {
+        showAuthError(err.message);
+    } finally {
+        $('#loginBtn').disabled = false;
+        $('#loginBtn').textContent = '验证并登录';
+    }
+}
+
+async function logout() {
+    try { await api('DELETE', '/api/auth'); } catch (e) { /* ignore */ }
+    showPage('auth');
+    $('#tokenInput').value = '';
+}
+
+function showAuthError(msg) {
+    $('#authError').textContent = msg;
+    $('#authError').style.display = 'block';
+}
+function hideAuthError() { $('#authError').style.display = 'none'; }
+
+// ── Repos ──
+let repoPage = 1;
+let repoData = [];
+
+async function loadRepos() {
+    showLoading('加载仓库列表...');
+    try {
+        const repos = await api('GET', `/api/repos?page=${repoPage}&per_page=100`);
+        repoData = repos;
+        renderRepos();
+    } catch (err) {
+        alert('加载仓库失败: ' + err.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+function renderRepos() {
+    const grid = $('#repoGrid');
+    const empty = $('#repoEmpty');
+
+    if (repoData.length === 0) {
+        grid.innerHTML = '';
+        empty.style.display = '';
+        return;
+    }
+    empty.style.display = 'none';
+
+    grid.innerHTML = repoData.map(r => `
+        <div class="repo-card">
+            <div class="repo-name">${escHtml(r.full_name)}</div>
+            <div class="repo-desc">${escHtml(r.description || '')}</div>
+            <div class="repo-meta">
+                ${r.language ? `<span>● ${escHtml(r.language)}</span>` : ''}
+                <span>★ ${r.stargazers_count}</span>
+                <span>${formatDate(r.updated_at)}</span>
+                <span class="repo-badge">${r.private ? '私有' : '公开'}</span>
+            </div>
+            <div class="repo-actions">
+                <button class="btn btn-primary btn-sm" onclick="enterRepo('${escAttr(r.full_name)}', '${escAttr(r.html_url)}')">进入</button>
+                <button class="btn btn-sm" onclick="showRenameModal('${escAttr(r.full_name)}')">重命名</button>
+                <button class="btn btn-sm" onclick="showDeleteModal('${escAttr(r.full_name)}')" style="color:#cf222e;border-color:#cf222e;">删除</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function enterRepo(fullName, htmlUrl) {
+    const [owner, repo] = fullName.split('/');
+    showUploadPage(owner, repo, htmlUrl);
+}
+
+// ── Create Repo ──
+function showCreateModal() {
+    $('#newRepoName').value = '';
+    $('#newRepoDesc').value = '';
+    $('#newRepoPrivate').checked = false;
+    $('#createError').style.display = 'none';
+    $('#createModal').classList.add('active');
+}
+function closeCreateModal() { $('#createModal').classList.remove('active'); }
+
+async function createRepo() {
+    const name = $('#newRepoName').value.trim();
+    const desc = $('#newRepoDesc').value.trim();
+    const isPrivate = $('#newRepoPrivate').checked;
+
+    if (!name) {
+        $('#createError').textContent = '请输入仓库名称';
+        $('#createError').style.display = 'block';
+        return;
+    }
+
+    try {
+        await api('POST', '/api/repos', { name, description: desc, isPrivate });
+        closeCreateModal();
+        loadRepos();
+    } catch (err) {
+        $('#createError').textContent = err.message;
+        $('#createError').style.display = 'block';
+    }
+}
+
+// ── Rename Repo ──
+let renameTarget = null;
+function showRenameModal(fullName) {
+    renameTarget = fullName;
+    const [owner, repo] = fullName.split('/');
+    $('#renameInput').value = repo;
+    $('#renameError').style.display = 'none';
+    $('#renameModal').classList.add('active');
+}
+function closeRenameModal() { $('#renameModal').classList.remove('active'); renameTarget = null; }
+
+async function confirmRename() {
+    const newName = $('#renameInput').value.trim();
+    if (!newName) { $('#renameError').textContent = '请输入新名称'; $('#renameError').style.display = 'block'; return; }
+    const [owner] = renameTarget.split('/');
+    try {
+        await api('PATCH', `/api/repos/${owner}/${encodeURIComponent(renameTarget.split('/')[1])}`, { name: newName });
+        closeRenameModal();
+        loadRepos();
+    } catch (err) {
+        $('#renameError').textContent = err.message;
+        $('#renameError').style.display = 'block';
+    }
+}
+
+// ── Delete Repo ──
+let deleteTarget = null;
+function showDeleteModal(fullName) {
+    deleteTarget = fullName;
+    $('#deleteRepoName').textContent = fullName;
+    $('#deleteConfirmInput').value = '';
+    $('#deleteError').style.display = 'none';
+    $('#deleteConfirmBtn').disabled = true;
+    $('#deleteModal').classList.add('active');
+}
+function closeDeleteModal() { $('#deleteModal').classList.remove('active'); deleteTarget = null; }
+
+$('#deleteConfirmInput').addEventListener('input', function() {
+    $('#deleteConfirmBtn').disabled = this.value.trim() !== deleteTarget;
+});
+
+async function confirmDelete() {
+    if ($('#deleteConfirmInput').value.trim() !== deleteTarget) return;
+    const [owner, repo] = deleteTarget.split('/');
+    try {
+        await api('DELETE', `/api/repos/${owner}/${encodeURIComponent(repo)}`);
+        closeDeleteModal();
+        loadRepos();
+    } catch (err) {
+        $('#deleteError').textContent = err.message;
+        $('#deleteError').style.display = 'block';
+    }
+}
+
+// ── Branches ──
+async function loadBranches(owner, repo) {
+    const list = $('#uploadBranchList');
+    const input = $('#uploadBranchInput');
+    try {
+        const branches = await api('GET', `/api/repos/${owner}/${encodeURIComponent(repo)}/branches`);
+        list.innerHTML = branches.map(b => `<option value="${escAttr(b.name)}">`).join('');
+        input.value = branches.length > 0 ? branches[0].name : 'main';
+    } catch (e) {
+        list.innerHTML = '<option value="main">';
+        input.value = 'main';
+    }
+}
+
+async function checkRepoEmpty(owner, repo) {
+    try {
+        const data = await api('GET', `/api/repos/${owner}/${encodeURIComponent(repo)}/tree?branch=main`);
+        if (data.isEmpty) {
+            $('#emptyRepoMsg').style.display = '';
+        }
+    } catch (e) {
+        $('#emptyRepoMsg').style.display = '';
+    }
+}
+
+// ── Folder ignore patterns ──
+const IGNORE_DIRS = ['node_modules', '.git', '.svn', '.hg', '__pycache__', '.idea', '.vscode', 'dist', '.next', '.nuxt', 'build', '.cache'];
+
+function detectCommonRoot(files) {
+    if (files.length === 0) return null;
+    const firstSlash = files[0].path.indexOf('/');
+    if (firstSlash === -1) return null;
+    const root = files[0].path.substring(0, firstSlash + 1);
+    if (!root) return null;
+    const allShare = files.every(f => f.path === root.slice(0, -1) || f.path.startsWith(root));
+    return allShare ? root : null;
+}
+
+function stripRootFromFiles(files, root) {
+    for (const f of files) {
+        f.path = f.path.startsWith(root) ? f.path.slice(root.length) : f.path;
+    }
+}
+
+let strippedRoot = null; // The root folder name that was stripped
+
+function filterFiles(files) {
+    const filtered = [];
+    let skipped = 0;
+    for (const f of files) {
+        const parts = f.path.replace(/\\/g, '/').split('/');
+        const shouldSkip = parts.some(part => IGNORE_DIRS.includes(part));
+        if (shouldSkip) { skipped++; continue; }
+        filtered.push(f);
+    }
+    return { filtered, skipped };
+}
+
+// ── File selection ──
+function handleFolderSelect(event) {
+    const rawFiles = Array.from(event.target.files);
+    if (rawFiles.length === 0) return;
+    const allFiles = rawFiles.map(f => ({
+        file: f, path: f.webkitRelativePath || f.name, size: f.size
+    }));
+    openUploadModal(allFiles);
+}
+
+// Drop zone handling
+const dropZone = $('#dropZone');
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('drag-over'); });
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const items = e.dataTransfer.items;
+    if (!items) return;
+    const entries = [];
+    for (const item of items) {
+        if (item.kind === 'file') {
+            const entry = item.webkitGetAsEntry();
+            if (entry) entries.push(entry);
+        }
+    }
+    if (entries.length > 0) {
+        traverseEntries(entries).then(files => {
+            if (files.length === 0) return;
+            openUploadModal(files);
+        });
+    }
+});
+
+async function traverseEntries(entries) {
+    const result = [];
+    async function walk(entry, basePath = '') {
+        if (entry.isFile) {
+            const file = await new Promise(resolve => entry.file(resolve));
+            const fullPath = basePath ? basePath + '/' + entry.name : entry.name;
+            result.push({ file, path: fullPath, size: file.size });
+        } else if (entry.isDirectory) {
+            const reader = entry.createReader();
+            const subEntries = await new Promise(resolve => {
+                const all = [];
+                function readBatch() {
+                    reader.readEntries(batch => {
+                        if (batch.length === 0) { resolve(all); return; }
+                        all.push(...batch);
+                        readBatch();
+                    });
+                }
+                readBatch();
+            });
+            const dirPath = basePath ? basePath + '/' + entry.name : entry.name;
+            for (const sub of subEntries) {
+                await walk(sub, dirPath);
+            }
+        }
+    }
+    for (const entry of entries) {
+        await walk(entry, '');
+    }
+    return result;
+}
+
+// ── Upload Modal ──
+
+function openUploadModal(rawFiles) {
+    if (!currentUploadRepo) return;
+
+    // Filter files
+    const { filtered, skipped } = filterFiles(rawFiles);
+    if (filtered.length === 0) {
+        alert('所选文件夹中没有可上传的文件（node_modules、.git 等目录已自动跳过）');
+        return;
+    }
+    selectedFiles = filtered;
+    selectedFiles.sort((a, b) => a.path.localeCompare(b.path));
+
+    // Detect and strip common root folder
+    strippedRoot = detectCommonRoot(selectedFiles);
+    if (strippedRoot) {
+        stripRootFromFiles(selectedFiles, strippedRoot);
+        console.log('[Upload] Stripped root folder:', strippedRoot);
+    }
+
+    // Reset state
+    readCancelFlag = false;
+    readFilesData = [];
+    $('#uploadProgFill').style.width = '0%';
+    $('#uploadProgText').textContent = '';
+    $('#uploadFileTree').innerHTML = '';
+    $('#uploadFileTree').style.display = 'none';
+    $('#uploadFileCount').textContent = '';
+    $('#uploadPhaseSettings').style.display = 'none';
+    $('#uploadConfirmBtn').style.display = 'none';
+    $('#uploadResultBox').className = 'result-box';
+    $('#uploadResultBox').style.display = 'none';
+    $('#uploadResultBox').innerHTML = '';
+    $('#uploadCancelBtn').textContent = '取消上传';
+    $('#uploadCancelBtn').disabled = false;
+    $('#uploadModalTitle').textContent = '正在读取文件...';
+
+    // Show modal
+    $('#uploadModal').classList.add('active');
+
+    // Start reading files
+    readFilesWithProgress();
+}
+
+async function readFilesWithProgress() {
+    const total = selectedFiles.length;
+    const progFill = $('#uploadProgFill');
+    const progText = $('#uploadProgText');
+    const treeEl = $('#uploadFileTree');
+    const countEl = $('#uploadFileCount');
+
+    treeEl.style.display = '';
+    const totalSize = selectedFiles.reduce((s, f) => s + f.size, 0);
+    countEl.textContent = `${total} 个文件，共 ${formatSize(totalSize)}`;
+
+    // Build initial tree (just paths)
+    treeEl.innerHTML = selectedFiles.slice(0, 100).map(f =>
+        `<div class="tree-item"><span>${escHtml(f.path)}</span><span class="file-size">${formatSize(f.size)}</span></div>`
+    ).join('');
+    if (total > 100) {
+        treeEl.innerHTML += `<div style="padding:4px 8px;color:#656d76;font-size:12px;">... 还有 ${total - 100} 个文件</div>`;
+    }
+
+    const files = [];
+    for (let i = 0; i < total; i++) {
+        if (readCancelFlag) {
+            closeUploadModal();
+            return;
+        }
+
+        const sf = selectedFiles[i];
+        const pct = Math.round((i / total) * 100);
+        progFill.style.width = pct + '%';
+        progText.textContent = `读取文件 ${i + 1}/${total}: ${sf.path}`;
+
+        try {
+            const content = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const parts = reader.result.split(',');
+                    resolve(parts.length >= 2 ? parts[1] : '');
+                };
+                reader.onerror = () => reject(new Error('读取失败'));
+                reader.readAsDataURL(sf.file);
+            });
+            files.push({ path: sf.path, content, size: sf.size });
+        } catch (fileErr) {
+            console.error('[Upload] Read error:', sf.path, fileErr);
+            $('#uploadResultBox').innerHTML = `<b>读取文件失败</b><br>${escHtml(sf.path)}: ${escHtml(fileErr.message)}`;
+            $('#uploadResultBox').className = 'result-box error';
+            return;
+        }
+    }
+
+    // Reading complete
+    readFilesData = files;
+    progFill.style.width = '100%';
+    progText.textContent = `文件读取完成！共 ${total} 个文件，${formatSize(totalSize)}`;
+    $('#uploadModalTitle').textContent = '配置上传参数';
+
+    console.log('[Upload] Files read, total bytes:', totalSize);
+
+    // Show settings
+    $('#uploadPhaseSettings').style.display = '';
+    $('#uploadConfirmBtn').style.display = '';
+    $('#uploadCancelBtn').textContent = '取消上传';
+    $('#uploadBranchInput').value = $('#uploadBranchInput').value || 'main';
+    if (!$('#uploadCommitMsg').value) {
+        $('#uploadCommitMsg').value = `Upload files via GitHub Uploader`;
+    }
+    // Show root folder note if a common root was stripped
+    if (strippedRoot) {
+        $('#uploadRootName').textContent = strippedRoot;
+        $('#uploadRootFolderNote').style.display = '';
+        $('#uploadKeepRoot').checked = false;
+    } else {
+        $('#uploadRootFolderNote').style.display = 'none';
+    }
+}
+
+function cancelUpload() {
+    if (readFilesData.length > 0 && $('#uploadPhaseSettings').style.display !== 'none') {
+        // Phase 2: confirm cancel during upload
+        if ($('#uploadConfirmBtn').style.display === 'none') {
+            // Upload in progress, cancel
+            // (cancellation is handled by closing modal)
+        }
+    }
+    readCancelFlag = true;
+    closeUploadModal();
+}
+
+function closeUploadModal() {
+    $('#uploadModal').classList.remove('active');
+    readFilesData = [];
+    readCancelFlag = false;
+}
+
+async function confirmUpload() {
+    if (!currentUploadRepo || readFilesData.length === 0) return;
+
+    const mode = document.querySelector('input[name="uploadMode"]:checked').value;
+    const branch = $('#uploadBranchInput').value.trim() || 'main';
+    const commitMessage = $('#uploadCommitMsg').value.trim() || 'Upload files via GitHub Uploader';
+
+    console.log('[Upload] Confirmed - mode:', mode, 'branch:', branch, 'commit:', commitMessage);
+
+    // If user checked "keep root folder", re-add the stripped prefix
+    if (strippedRoot && $('#uploadKeepRoot').checked) {
+        for (const f of readFilesData) {
+            f.path = strippedRoot + f.path;
+        }
+        console.log('[Upload] Keeping root folder:', strippedRoot);
+    }
+
+    // Switch to upload phase
+    $('#uploadPhaseSettings').style.display = 'none';
+    $('#uploadConfirmBtn').style.display = 'none';
+    $('#uploadCancelBtn').textContent = '取消上传';
+    $('#uploadModalTitle').textContent = '正在上传到 GitHub...';
+    $('#uploadProgFill').style.width = '0%';
+    $('#uploadProgText').textContent = '正在创建上传会话...';
+    $('#uploadResultBox').className = 'result-box';
+    $('#uploadResultBox').style.display = 'none';
+    $('#uploadResultBox').innerHTML = '';
+
+    try {
+        // Step 1: Begin session
+        const beginRes = await api('POST',
+            `/api/upload/begin/${currentUploadRepo.owner}/${encodeURIComponent(currentUploadRepo.repo)}`,
+            { branch, mode, commitMessage, fileCount: readFilesData.length });
+
+        const sessionId = beginRes.sessionId;
+        console.log('[Upload] Session:', sessionId, 'branch:', beginRes.branch);
+
+        // Step 2: Upload files in batches (parallelized)
+        const BATCH_SIZE = 50;        // 50 files per batch
+        const CONCURRENT = 3;         // up to 3 batches in flight
+        const totalFiles = readFilesData.length;
+        const totalBatches = Math.ceil(totalFiles / BATCH_SIZE);
+        let uploadedCount = 0;
+        let completedBatches = 0;
+
+        // Build batch list
+        const batches = [];
+        for (let i = 0; i < totalFiles; i += BATCH_SIZE) {
+            batches.push(readFilesData.slice(i, i + BATCH_SIZE));
+        }
+
+        // Upload with concurrency control
+        for (let i = 0; i < batches.length; i += CONCURRENT) {
+            if (readCancelFlag) {
+                try { await api('POST', `/api/upload/commit/${sessionId}`, {}); } catch (e) {}
+                closeUploadModal();
+                return;
+            }
+
+            const chunk = batches.slice(i, i + CONCURRENT);
+            const results = await Promise.all(
+                chunk.map(async (batch, idx) => {
+                    const batchNum = i + idx + 1;
+                    const res = await api('POST', `/api/upload/batch/${sessionId}`, { files: batch });
+                    return { batchNum, res };
+                })
+            );
+
+            for (const r of results) {
+                completedBatches++;
+                uploadedCount = r.res.totalEntries;
+                const pct = 5 + Math.round((completedBatches / totalBatches) * 85);
+                $('#uploadProgFill').style.width = pct + '%';
+                $('#uploadProgText').textContent = `上传第 ${r.batchNum}/${totalBatches} 批 (${uploadedCount}/${totalFiles} 文件)...`;
+                console.log(`[Upload] Batch ${r.batchNum}/${totalBatches} done, total: ${uploadedCount}`);
+            }
+        }
+
+        // Step 3: Finalize — create tree + commit
+        $('#uploadProgFill').style.width = '90%';
+        $('#uploadProgText').textContent = '正在创建提交...';
+
+        const commitRes = await api('POST', `/api/upload/commit/${sessionId}`, {});
+
+        $('#uploadProgFill').style.width = '100%';
+        $('#uploadProgText').textContent = '上传完成!';
+        $('#uploadModalTitle').textContent = '上传成功';
+        $('#uploadCancelBtn').textContent = '关闭';
+
+        console.log('[Upload] Result:', commitRes);
+        $('#uploadResultBox').innerHTML = `<b>${escHtml(commitRes.message)}</b>`;
+        $('#uploadResultBox').className = 'result-box success';
+
+        selectedFiles = [];
+        readFilesData = [];
+        $('#folderInput').value = '';
+
+    } catch (err) {
+        console.error('[Upload] Error:', err);
+        $('#uploadProgFill').style.width = '0%';
+        $('#uploadResultBox').innerHTML = `<b>上传失败</b><br>${escHtml(err.message)}`;
+        $('#uploadResultBox').className = 'result-box error';
+        $('#uploadModalTitle').textContent = '上传失败';
+        $('#uploadCancelBtn').textContent = '关闭';
+        $('#uploadCancelBtn').disabled = false;
+    }
+}
+
+// ── Utils ──
+function escHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function formatDate(d) {
+    const dt = new Date(d);
+    const now = new Date();
+    const diff = now - dt;
+    const days = Math.floor(diff / 86400000);
+    if (days === 0) return '今天';
+    if (days === 1) return '昨天';
+    if (days < 30) return `${days} 天前`;
+    if (days < 365) return `${Math.floor(days/30)} 个月前`;
+    return `${Math.floor(days/365)} 年前`;
+}
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+// ── Modal click outside to close (except upload modal) ──
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    if (overlay.id === 'uploadModal') return; // upload modal has its own close logic
+    overlay.addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('active');
+    });
+});
+
+// ── Init ──
+checkAuth();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "github-uploader",
+  "version": "1.0.0",
+  "description": "Web tool to manage GitHub repos and upload local code",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "mysql2": "^3.11.0",
+    "cors": "^2.8.5"
+  }
+}
